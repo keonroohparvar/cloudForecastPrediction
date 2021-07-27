@@ -1,15 +1,26 @@
 import os
-import shutil
+from pysolar.solar import *
 from PIL import Image
+from math import floor, pi, cos, sin
 import cv2
 import numpy as np
+import datetime
 from openpyxl import Workbook, workbook
 from openpyxl.utils import get_column_letter
+import pytz
 
 workbook = Workbook()
 sheet = workbook.active
 
 # This file will process JPEG images using the opencv package
+
+# Geographical Location of the Camera 
+
+latitude = 35.32
+longitude = -120.69
+
+#Minutes passed since 12am. 
+startTime = 600 
 
 
 # Helper Function that returns a list of imagePath strings that are the images in the ./images folder
@@ -20,7 +31,7 @@ def loadImages(folderName):
 
     # print(f"numImages is: {numImages}")
 
-    for i in range(numImages):
+    for i in range(numImages + 1):
         baseImg = f"img{i}.jpg"
         imgPath = os.path.join(folderName, baseImg)
         images.append(imgPath)
@@ -29,16 +40,13 @@ def loadImages(folderName):
 
 
 # Find Sun by comparing image to six differnet template images of the sun
-def findSun(imagePath, templateImagesPath):
-    # print("Finding Sun for Image {}...".format(imagePath))
-
-    # Checks that dir is there
+def findSun(imagePath, templateImagesPath, imageCounter, option):
+    # Checks that directory is there
     if not os.path.isdir(templateImagesPath):
         print("Template images dir not correctly formatted.")
 
     # Open image
     image = cv2.imread(imagePath, 0)
-    # print("Original Image Shape: {}".format(image.shape))
 
     # Array to store image names
     imgNames = []
@@ -54,31 +62,90 @@ def findSun(imagePath, templateImagesPath):
     # imgNum = i+1
     
     # Format image name to: {cwd}/src/template{imgNum}.jpg
-    templateName = imgNames[0]
-    templateName = templateName[:len(templateName) - 5]
-    templateName = templateName + "1.jpg"
+    templateRootName = imgNames[0]
+    templateRootName = templateRootName[:len(templateRootName) - 5]
 
-    # Read template Image
-    template = cv2.imread(templateName, 0)
+    highestConfidence = 0
+    bestTemplate = 0
+    bestmax_loc = 0
+    templateCount = 1
 
     # Create copy of original image to edit
     imgBox = image.copy()
 
-    # Apply template matching to image with specified template
-    result = cv2.matchTemplate(imgBox, template, cv2.TM_CCORR)
-    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+    while templateCount <= 6:
+        templateName = templateRootName + str(templateCount) + ".jpg"
 
+        # Read template Image
+        template = cv2.imread(templateName, 0)
+
+        # Apply template matching to image with specified template
+        result = cv2.matchTemplate(imgBox, template, cv2.TM_CCORR)
+        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+
+        if max_val > highestConfidence:
+            highestConfidence = max_val
+            bestTemplate = template
+            bestmax_loc = max_loc
+
+        templateCount += 1
+
+    if (max_val > 1553455000.0): 
+        middle = templateSun(bestmax_loc, bestTemplate, imgBox)
+    else:
+        azimuth, altitude, middle = solarCoordinateSun(imgBox, imageCounter)
+        cv2.circle(imgBox, middle, 5, (0, 0, 0), -1)
+        cv2.circle(imgBox, middle, 90, (0, 0, 0), 3)
+
+    # Resize imgBox for better viewing
+    newWidth = int(imgBox.shape[1]*50 / 100)
+    newHeight = int(imgBox.shape[0]*50/100)
+    smallerImg = cv2.resize(imgBox, (newWidth, newHeight))
+
+    cv2.imwrite("./sunImages/img" + str(imageCounter) + "Sun" + ".jpg", smallerImg)
+
+    if (int(option) == 2 or int(option) == 4):
+        printImgInfo(imageCounter, max_val, middle)
+    if (int(option) == 3 or int(option) == 4):
+        cv2.imshow("Sun Location", smallerImg)
+        cv2.waitKey()
+
+    #cv2.waitKey()
+    return middle
+
+#Convert the min an image was taken and convert it to the hour and minute of the day
+#helper function for using pysolar in findSun() 
+def convertMinToTime(min):
+    hour = (min / 60)
+    minute = (min % 60)
+    return floor(hour), floor(minute)
+
+def getSolarAngles(imageNumber):
+  curTime = startTime + 5 * imageNumber
+  hour, minute = convertMinToTime(curTime)
+  
+  # naive date with no sense of timezone
+  date = datetime.datetime(2020, 5, 19, hour, minute, 0, 0)  
+  timezone = pytz.timezone("America/Los_Angeles")
+  # aware date now includes timezone info (accounts for daylight savings as well)
+  awareDate = timezone.localize(date)  
+  azimuth = get_azimuth(latitude, longitude, awareDate)
+  altitude = get_altitude(latitude, longitude, awareDate)
+  return (azimuth, altitude)
+
+def templateSun(bestmax_loc, bestTemplate, imgBox):
     # Assign the maximum equal value of template to variable topleft location
-    topLeft = max_loc
+    topLeft = bestmax_loc
 
     # Find dimensions of template image for drawing the box
-    width, height = template.shape[::-1]
+    width, height = bestTemplate.shape[::-1]
 
     # Calculate Dimensions of Box around object
     bottomRight = (topLeft[0] + width, topLeft[1] + height)
 
     # Find middle point of Sun
     middle = (int(topLeft[0]+(width/2)), int(topLeft[1] + (height / 2)))
+    #print(middle)
 
     # Draw Box around object
     cv2.rectangle(imgBox, topLeft, bottomRight, 0, 2)
@@ -86,23 +153,45 @@ def findSun(imagePath, templateImagesPath):
     # Draw Circle around Middle
     cv2.circle(imgBox, middle, 5, (0, 0, 0), -1)
 
-    # Resize imgBox for better viewing
-    newWidth = int(imgBox.shape[1]*50 / 100)
-    newHeight = int(imgBox.shape[0]*50/100)
-    smallerImg = cv2.resize(imgBox, (newWidth, newHeight))
-
-
-    # print("Value is: {} and width:{} and height:{}".format(max_val, width, height))
-
-    # print("Max location: ({},{})".format(max_loc[0], max_loc[1]))
-    # print("Min Location: ({}, {})".format(min_loc[0], min_loc[1]))
-
-    #cv2.imshow("Test", smallerImg)
-
-    #cv2.waitKey()
-
     return middle
 
+def solarCoordinateSun(image, imageNumber):
+
+    azimuth, altitude = getSolarAngles(imageNumber)  # angles are in degrees
+
+    # convert to radians
+    azimuth = (azimuth - 100) / 180 * pi
+    altitude = altitude / 180 * pi
+
+    height, width = image.shape[:2]
+    xCenter = round(width / 2) + 10
+    yCenter = round(height / 2)
+    xScale = cos(azimuth)
+    yScale = -sin(azimuth)
+    # zScale = 1 - altitude / (math.pi / 2)  # assumes 180 degree fisheye
+    zScale = 1 - altitude / (pi / 2 * 90 / 92.5)  # rough adjustment for 185 degree fisheye
+    # distance from image edge to fisheye edge is ~250 pixels
+    x = xCenter + round(xScale * zScale * (width - 250) / 2)
+    y = yCenter + round(yScale * zScale * (width - 250) / 2)
+    return azimuth, altitude, boundCoordinates(x, y, image)
+
+def boundCoordinates(x, y, img):
+  height, width = img.shape[:2]
+  if (x >= width):
+    x = width - 1
+  elif (x < 0):
+    x = 0
+  if (y >= height):
+    y = height - 1
+  elif (y < 0):
+    y = 0
+  return (x, y)
+
+def printImgInfo(imgNum, max_val, middle):
+    print("Img: " + str(imgNum))
+    print("Max_val: " + str(max_val))
+    print("Middle: " + str(middle))
+    print("\n")
 
 # Function to create all 7 rings which we will be checking the haze index %'s of
 def createRings(imagePath, middle):
@@ -155,7 +244,7 @@ def createRings(imagePath, middle):
     ring6Mask = cv2.bitwise_and(circle6Img, mask5Inv)
 
     ring7Mask = cv2.bitwise_and(circle7Img, mask6Inv)
-    
+
     # Create masked rings for all 7 rings by 'Bitwise AND'-ing each mask with the inverse of the previous mask.
     maskedData1 = cv2.bitwise_and(imageColor, imageColor, mask=circle1Img)
     maskedData2 = cv2.bitwise_and(imageColor, imageColor, mask=ring2Mask)
@@ -186,29 +275,27 @@ def createRings(imagePath, middle):
     ringMasks.append(ring7Mask)
     ringMasks.append(ring7Mask)
 
-    # print(ringPixels)
+    #print(ringPixels)
 
-
-    # cv2.imshow("Ring 5 mask", ring5Mask)
-
-    cv2.waitKey()
+    #cv2.imshow("Ring 5 mask", ring5Mask)
     
+    #cv2.waitKey()
+
     return [maskedData1, maskedData2, maskedData3, maskedData4, maskedData5, maskedData6, maskedData7], ringPixels, ringMasks
 
 
 # Function to process images and calculate % values for each ring.
-def processImage(imagePath, thresholdLow, thresholdHigh, printImg=False):
+def processImage(imagePath, thresholdLow, thresholdHigh, counterImage, option, printImg=False):
     # Open Original Image
-    # originalImage = cv2.imread(imagePath, cv2.IMREAD_UNCHANGED)
     # print(f"imagePath is {imagePath}")
     originalImage = cv2.imread(imagePath, 1)
 
     # Finding Sun
-    middle = findSun(imagePath, './src/templateImages')
+    middle = findSun(imagePath, './src/templateImages', counterImage, option)
 
     # Creating Rings and Counting the Pixels in each Ring
     rings, ringPixels, ringMasks = createRings(imagePath, middle)
-
+    
     # Create Variable for Storing Percentages
     percentages = [0, 0, 0, 0, 0, 0, 0]
 
@@ -307,6 +394,11 @@ if __name__ == "__main__":
     while currOption != "q":
         # Print options for user in Shell
         print("\nOptions:\n\tp folderPath --- Process all images in specified folderPath")
+        print("\tAdd one after folder path:")
+        print("\t\t1 --- Normal run, does not display extra information")
+        print("\t\t2 --- Print image statitics as program runs")
+        print("\t\t3 --- Show images as they are processed")
+        print("\t\t4 --- Print image statitics and show images as images are processed")
         print("\td --- Display potential folder paths for processing")
         print("\tq --- Quit the shell\n")
         
@@ -337,15 +429,17 @@ if __name__ == "__main__":
                 updateWorksheetNames()
 
                 # Iterate over each image and save its percentages to excel sheet
-                for i in range(len(images)):
+                for i in range(len(images)-1):
                     print("Processing image {}...".format(i))
-                    percentages = processImage(images[i], 0.012, 0.1, False)
+                    percentages = processImage(images[i], 0.012, 0.1, i, params[1], False)
                     savePercentages(percentages, i)
                 
                 # Save excell sheet to ../trainingData/ folder with its respective file name
                 folderPath = folderPath.split("/")
                 folderPath.pop(0)
-                newFileName = "-".join(folderPath)
+                print("making excel sheet")
+                newFileName = "LocalTest"
+                #newFileName = "-".join(folderPath)
                 workbook.save(filename=f"./trainingData/{newFileName}.xlsx")
 
 
@@ -376,7 +470,8 @@ if __name__ == "__main__":
                         elif lowOrHigh == "h":
                             tempThreshHigh = threshHigh + (interval * i)
 
-                        processImage(testImagePath, tempThreshLow, tempThreshHigh, True)
+                        #MR: Not sure if image count should be 0, but I think that is fine because we aren't really using testing function anymore
+                        processImage(testImagePath, tempThreshLow, tempThreshHigh, 0, params[1], True)
                     
                     cv2.waitKey()
                     cv2.destroyAllWindows()
