@@ -438,7 +438,7 @@ if __name__ == "__main__":
                 folderPath = folderPath.split("/")
                 folderPath.pop(0)
                 print("making excel sheet")
-                newFileName = "LocalTest"
+                newFileName = "2020-5-19"
                 #newFileName = "-".join(folderPath)
                 workbook.save(filename=f"./trainingData/{newFileName}.xlsx")
 
