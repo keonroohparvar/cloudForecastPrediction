@@ -23,7 +23,7 @@ mpl.rcParams['axes.grid'] = False
 
 
 # Getting training data path
-trainingFile = "2020-4-20.xlsx"
+trainingFile = "2020-5-19.xlsx"
 excelPath = os.path.abspath(os.getcwd()) + "/trainingData/" + trainingFile
 
 # Read entire excel file as pandas dataframe
