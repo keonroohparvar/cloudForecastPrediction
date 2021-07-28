@@ -258,7 +258,7 @@ if __name__ == "__main__":
     # formatData()
     w2 = WindowGenerator(
         input_width=4, label_width=1, shift=1,
-        label_columns=['Ring 7'])
+        label_columns=['Ring 4 SW'])
 
     # example_window = tf.stack([np.array(train_df[:w2.total_window_size]),
     #                        np.array(train_df[100:100+w2.total_window_size]),
