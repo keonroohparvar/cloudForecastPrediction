@@ -1,12 +1,11 @@
 #!/bin/bash
 
 rm epochData.txt
-rm SummaryResults.txt
 
 lineCount=60
 lossSum=0
 valLossSum=0
-for i in 1 2 3 4 5 6
+for (( i=1; i<=$1; i++))
    do 
       python src/weatherModel.py >> epochData.txt
 
