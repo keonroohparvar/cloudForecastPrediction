@@ -1,2 +1,0 @@
-Loss Sum = 0.734
-Loss_Val Sum = 0.532
