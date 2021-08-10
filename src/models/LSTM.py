@@ -52,6 +52,9 @@ train_df = train_df / 100
 val_df = val_df / 100
 test_df = test_df / 100
 
+(x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
+print(x_train)
+
 
 
 # Function to format the input data for the model

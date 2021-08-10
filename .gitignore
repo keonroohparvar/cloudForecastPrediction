@@ -1,7 +1,6 @@
 tfEnv.yml
 env/
 venv/
-images/
 SampleImages/
 src/flattenImage.py
 .DS_Store
