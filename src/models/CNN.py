@@ -5,7 +5,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-# import opencv-python as opcv
+import cv2
 import seaborn as sns
 import tensorflow as tf
 from tensorflow import keras
@@ -49,7 +49,7 @@ def loadImageData():
       # append each image name to the rawImagesPath
       currentImagePath = rawImagesPath + "/" + imageName
       # load each image using opencv-python
-      image = opcv.imread(currentImagePath)
+      image = cv2.imread(currentImagePath)
       # append name to inputImages list
       inputImages.append(image)
    # return numpy array of input images
