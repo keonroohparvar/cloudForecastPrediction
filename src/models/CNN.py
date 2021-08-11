@@ -5,6 +5,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+# import opencv-python as opcv
 import seaborn as sns
 import tensorflow as tf
 from tensorflow import keras
@@ -39,6 +40,20 @@ def partitionData():
    valDataFrame /= 100
    testDataFrame /= 100
 
+def loadImageData():
+   # change later if we need dynamic path
+   rawImagesPath = "images/rawImages/5-19"
+   inputImages = []
+   # for every image in the list of image names from the rawImages directory
+   for imageName in os.listdir(rawImagesPath):
+      # append each image name to the rawImagesPath
+      currentImagePath = rawImagesPath + "/" + imageName
+      image = opcv.imread(currentImagePath)
+      # append name to inputImages list
+      inputImages.append(image)
+   # return numpy array of input images
+   return np.array(inputImages)
+
 def createMLP(dim, regress=False):
 	# define our MLP network
 	model = Sequential()
@@ -69,7 +84,7 @@ def createCNN(width, height, depth, filters=(16, 32, 64), regress=False):
 		x = BatchNormalization(axis=chanDim)(x)
 		x = MaxPooling2D(pool_size=(2, 2))(x)
 
-def createModel()
+def createModel():
    # create the MLP and CNN models
    mlp = models.create_mlp(trainAttrX.shape[1], regress=False)
    cnn = models.create_cnn(64, 64, 3, regress=False)
@@ -87,7 +102,8 @@ def createModel()
 
 
 def main():
-   partitionData()
+   # partitionData()
+   loadImageData()
 
 if __name__ == "__main__":
    main()
