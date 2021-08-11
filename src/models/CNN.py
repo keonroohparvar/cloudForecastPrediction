@@ -48,6 +48,7 @@ def loadImageData():
    for imageName in os.listdir(rawImagesPath):
       # append each image name to the rawImagesPath
       currentImagePath = rawImagesPath + "/" + imageName
+      # load each image using opencv-python
       image = opcv.imread(currentImagePath)
       # append name to inputImages list
       inputImages.append(image)
