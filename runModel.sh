@@ -22,7 +22,7 @@ for (( i=1; i<=$1; i++))
          echo " $i Trial Loss: $valLoss"
       fi 
 
-      echo "-----------------------------------------------"
+      echo " $i Finished ------------------------------------"
    done
 
 printf '\nAverage Loss: '
