@@ -231,15 +231,29 @@ def trainModel():
 
     history = compile_and_fit(rnn_model, w2)
 
+    #steps = 20
+    #height = 32
+    #width = 32
+    #input_channels = 3
+    #output_channels = 6
+
+    #inputs = tf.keras.Input(shape=(steps, height, width, input_channels))
+
     # val_performance['Linear'] = linear.evaluate(single_step_window.val)
     # performance['Linear'] = linear.evaluate(single_step_window.test, verbose=0)
 
     #lstm_model = tf.keras.models.Sequential([
     # Shape [batch, time, features] => [batch, time, lstm_units]
+    #tf.keras.layers.SimpleRNN(64, return_sequences=True),
     #tf.keras.layers.LSTM(32, return_sequences=True),
+
+    #tf.keras.layers.ConvLSTM2D(filters=output_channels, kernel_size=3),
+    #tf.keras.layers.ConvLSTM2D(filters=output_channels, kernel_size=3),
     # Shape => [batch, time, features]
     #tf.keras.layers.Dense(units=1)
     #])
+
+    
 
 
 
