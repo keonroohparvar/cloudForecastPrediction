@@ -61,18 +61,9 @@ def formatData():
     
 
     n = len(df)
-    print(df)
-    print("----\n")
     train_df = df[:int(n * 0.6)]
-    print(train_df.columns)
-    
     val_df = df[int(n*0.6):int(n*0.9)]
     test_df = df[int(n*0.9):]
-    print(train_df.shape)
-    
-    print("\nDONE W FORMATTING...\n\n")
-
-
 
 # Class that creates windowed data
 class WindowGenerator():
@@ -104,11 +95,8 @@ class WindowGenerator():
         self.input_indices = np.arange(self.total_window_size)[self.input_slice]
 
         self.label_start = self.total_window_size - self.label_width
-        print(f"label start: {self.label_start}")
         self.labels_slice = slice(self.label_start, None)
-        print(f"label slice: {self.labels_slice}")
         self.label_indices = np.arange(self.total_window_size)[self.labels_slice]
-        print(f"label indices: {self.label_indices}")
 
     def __repr__(self):
         return '\n'.join([
@@ -120,7 +108,6 @@ class WindowGenerator():
     def split_window(self, features):
         inputs = features[:, self.input_slice, :]
         labels = features[:, self.labels_slice, :]
-        print(f"labels: {labels}")
         if self.label_columns is not None:
             labels = tf.stack(
             [labels[:, :, self.column_indices[name]] for name in self.label_columns],
@@ -227,6 +214,7 @@ def compile_and_fit(model, window, patience=2):
                 metrics=[tf.metrics.MeanAbsoluteError()])
 
 
+    #this is what prints all the epochs
     history = model.fit(window.train, epochs=MAX_EPOCHS,
                         validation_data=window.val,
                         callbacks=[])
@@ -258,8 +246,8 @@ def trainModel():
 if __name__ == "__main__":
     # formatData()
     w2 = WindowGenerator(
-        input_width=4, label_width=1, shift=1,
-        label_columns=['Ring 4 SW'])
+        input_width=1, label_width=1, shift=1,
+        label_columns=['Wind Direction'])
 
     # example_window = tf.stack([np.array(train_df[:w2.total_window_size]),
     #                        np.array(train_df[100:100+w2.total_window_size]),
