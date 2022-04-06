@@ -1,6 +1,6 @@
 # Cloud Forecast Prediction using Deep Learning
 
-This project was put forward due to the work of Keon Roohparvar (@keonroohparvar), Mckenna Reed (@KennaReed), Noah Yuen, and Kevin Sittner (@ksittner), and our work was under the advisement of Dr. Maria Pantoja. 
+This project was put forward due to the work of Keon Roohparvar (@keonroohparvar), Mckenna Reed (@KennaReed), Noah Yuen (@noahyuen), and Kevin Sittner (@ksittner), and our work was under the advisement of Dr. Maria Pantoja. 
 
 <!-- SUMMARY OF THE ENTIRE REPO'S FUNCTION -->
 
